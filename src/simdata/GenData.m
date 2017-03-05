@@ -9,7 +9,9 @@ function out = GenData(p1,p2,ndir,tbin)
 % Neurons. These data sets can either be independent or dependent of the
 % direction of stimulus movement.
 %--------------------------------------------------------------------------
-% Inputs:   % p1 = probability of the first neuron firing
+% Inputs:   % dt = firing rate
+            % p1 = probability of the first neuron firing (should be a 1xD 
+                % matrix where D is the number of directions)
             % p2 = probability of the second neuron firing
             % ndir = number of possible direction bins
             % tbin = number of time bins
@@ -23,9 +25,14 @@ function out = GenData(p1,p2,ndir,tbin)
                 % out.fired = if the neurons fired during ea time bin (1 = yes)
                 % out.words = 'word' (comb of 0s and 1s) for ea time bin
                 % out.count = count for ea time bin
+                % out.InputForm = put it into the form needed for the
+                    % reconstruction script
+                % out.InputFormData = InputForm with bin values and times
 %--------------------------------------------------------------------------
 
 %parameters
+fireRate = dt;
+
 tBins = tbin;         % number of time bins*
 dBins = ndir;          % number of direction bins; should be odd
 
@@ -70,6 +77,17 @@ words(i,:) = (fired(:,i))';           % put it in easier form to read as 'words'
 end
 count = fired(1,:)+fired(2,:);
 
+% fix form
+InputFormData = zeros(tBins+1,dBins+1,2);
+InputFormData(1,2:end,1) = degBins; InputFormData(1,2:end,2) = degBins;
+for j = 1:2
+    for i = 2:tBins+1
+        placement = stimBin(i-1);
+        InputFormData(i,placement+1,j) = fired(j,i-1);
+        InputFormData(i,1,j) = (i-1)*fireRate;
+    end
+end
+InputForm = InputFormData(2:end,2:end,:);
 % outputs
     if dBins == 1                        % determine if the prob is indp or dept on the direction of the stimulus
         out.type = 'indp';
@@ -85,4 +103,6 @@ count = fired(1,:)+fired(2,:);
     out.fired = fired;
     out.words = words;
     out.count = count;
+    out.InputFormData = InputFormData;
+    out.InputForm = InputForm;
 end
